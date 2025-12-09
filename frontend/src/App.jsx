@@ -47,15 +47,40 @@ function App() {
     };
   }, [iniciarCamara]);
 
+  // --- SONIDO BEEP TIPO ESCÁNER ---
+  const beep = (frequency = 600, duration = 150) => {
+    try {
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.value = frequency;
+      oscillator.type = 'square';
+      
+      gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration / 1000);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + duration / 1000);
+    } catch {
+      console.log("Audio no soportado");
+    }
+  };
+
   // --- FUNCIÓN DEL BOTÓN "DISPARAR" ---
   const dispararEscaneo = async () => {
     if (!codigoDetectado) {
-      if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+      // Beep de error (tono más bajo)
+      beep(400, 100);
       return;
     }
 
     try {
-      if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+      // Beep de éxito tipo escáner (más grave)
+      beep(600, 150);
 
       console.log("Disparo:", codigoDetectado);
       
