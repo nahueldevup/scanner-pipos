@@ -27,9 +27,8 @@ if not exist venv (
     echo Creando entorno virtual...
     python -m venv venv
 )
-call venv\Scripts\activate
-echo Instalando dependencias del backend...
-pip install -r requirements.txt
+REM Usamos ruta directa para evitar depender de activate
+venv\Scripts\python.exe -m pip install -r requirements.txt
 cd ..
 
 echo.
