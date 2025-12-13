@@ -23,8 +23,20 @@ app.add_middleware(
 )
 
 # --- Configuración ---
-backend_dir = os.path.dirname(os.path.abspath(__file__))
-templates_dir = os.path.join(backend_dir, "templates")
+# Detectar si está corriendo desde PyInstaller bundle
+import sys
+if getattr(sys, 'frozen', False):
+    # Corriendo desde .exe empaquetado
+    bundle_dir = sys._MEIPASS
+    backend_dir = bundle_dir
+    templates_dir = os.path.join(bundle_dir, "templates")
+    dist_dir = os.path.join(bundle_dir, "frontend", "dist")
+else:
+    # Corriendo desde código fuente
+    backend_dir = os.path.dirname(os.path.abspath(__file__))
+    templates_dir = os.path.join(backend_dir, "templates")
+    dist_dir = os.path.join(backend_dir, "..", "frontend", "dist")
+
 templates = Jinja2Templates(directory=templates_dir)
 
 # Servir archivos estáticos del dashboard (CSS, etc.)
@@ -281,6 +293,5 @@ async def get_status():
 
 
 # --- Servir Frontend del móvil ---
-dist_dir = os.path.join(backend_dir, "..", "frontend", "dist")
 if os.path.exists(dist_dir):
     app.mount("/", StaticFiles(directory=dist_dir, html=True), name="static")
