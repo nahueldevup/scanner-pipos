@@ -2,3 +2,9 @@ fastapi
 uvicorn
 pyautogui
 websockets
+pywebview
+qrcode
+pillow
+jinja2
+pystray
+cryptography

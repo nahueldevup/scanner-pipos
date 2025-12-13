@@ -22,6 +22,6 @@ call venv\Scripts\activate
 echo Iniciando servidor en http://localhost:8001 ...
 echo Presiona Ctrl+C para detener el servidor.
 echo.
-REM Usamos el ejecutable directo para evitar problemas de PATH
-venv\Scripts\uvicorn.exe main:app --host 0.0.0.0 --port 8001 --reload
+REM Iniciamos la aplicación con ventana GUI
+venv\Scripts\python.exe run.py
 pause

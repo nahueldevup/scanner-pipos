@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scanner Pipos Server</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="/static/style_dashboard.css">
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1><i data-lucide="smartphone"></i> Conectar Escáner</h1>
+            <p>Escanea este código con tu móvil</p>
+            <div class="qr-box">
+                <img id="qr-image" src="/api/qr" alt="Código QR">
+            </div>
+            <div class="url" id="server-url">Cargando...</div>
+            <div class="hint">Primera vez? Acepta la advertencia de seguridad en tu móvil</div>
+        </div>
+
+        <div class="card">
+            <h1><i data-lucide="activity"></i> Estado del Servidor</h1>
+            <p>Escáneres móviles conectados</p>
+            <div class="stat-value" id="scanner-count">0</div>
+            <div class="stat-label">Dispositivos Móviles</div>
+            <div class="status-badge">
+                <i data-lucide="check-circle"></i>
+                Servidor Activo
+            </div>
+            <div class="card-buttons">
+                <button class="btn btn-small" id="btn-autostart" onclick="toggleAutostart()">
+                    <i data-lucide="power"></i>
+                    <span>Inicio Automático</span>
+                </button>
+                <button class="btn btn-small" onclick="minimizeToTray()">
+                    <i data-lucide="minimize-2"></i>
+                    <span>Minimizar</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="logs" id="logs">
+            <div class="log-entry">
+                <i data-lucide="info" style="color: #64748b"></i>
+                <span class="log-time">Sistema</span>
+                <span>Esperando conexiones...</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Inicializar iconos Lucide
+        lucide.createIcons();
+
+        const scannerCountEl = document.getElementById('scanner-count');
+        const logsEl = document.getElementById('logs');
+        const serverUrlEl = document.getElementById('server-url');
+        const btnAutostart = document.getElementById('btn-autostart');
+
+        function addLog(message, type = 'info') {
+            const time = new Date().toLocaleTimeString();
+            const icons = {
+                info: 'info',
+                scan: 'scan-barcode', 
+                connect: 'smartphone',
+                disconnect: 'smartphone-charging'
+            };
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = `
+                <i data-lucide="${icons[type] || 'info'}" class="log-${type}"></i>
+                <span class="log-time">${time}</span>
+                <span class="log-${type}">${message}</span>
+            `;
+            logsEl.prepend(entry);
+            lucide.createIcons();
+            if (logsEl.children.length > 50) logsEl.lastChild.remove();
+        }
+
+        // Obtener URL del servidor
+        fetch('/api/info')
+            .then(res => res.json())
+            .then(data => { serverUrlEl.textContent = data.url; });
+
+        // Verificar estado de autostart
+        fetch('/api/autostart')
+            .then(res => res.json())
+            .then(data => {
+                if (data.enabled) btnAutostart.classList.add('active');
+            });
+
+        function toggleAutostart() {
+            fetch('/api/autostart/toggle', { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    btnAutostart.classList.toggle('active', data.enabled);
+                    addLog(data.enabled ? 'Inicio automático activado' : 'Inicio automático desactivado', 'info');
+                });
+        }
+
+        function minimizeToTray() {
+            fetch('/api/minimize', { method: 'POST' });
+        }
+
+        // Conectar al WebSocket del dashboard
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const ws = new WebSocket(`${protocol}//${window.location.host}/ws/dashboard`);
+
+        ws.onopen = () => addLog('Conectado al servidor', 'connect');
+        ws.onclose = () => addLog('Desconectado del servidor', 'disconnect');
+
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            
+            if (data.type === 'stats') {
+                scannerCountEl.textContent = data.scanner_count;
+            } else if (data.type === 'scan') {
+                addLog(`Código escaneado: ${data.code}`, 'scan');
+            } else if (data.type === 'scanner_connected') {
+                addLog(`Escáner conectado`, 'connect');
+            } else if (data.type === 'scanner_disconnected') {
+                addLog(`Escáner desconectado`, 'disconnect');
+            }
+        };
+    </script>
+</body>
+</html>

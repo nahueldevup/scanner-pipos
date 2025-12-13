@@ -33,6 +33,49 @@ function App() {
     }
   }, []);
 
+  // --- WEBSOCKET: Identificarse como escáner móvil ---
+  useEffect(() => {
+    let ws = null;
+    let reconnectTimeout = null;
+    let pingInterval = null;
+    let active = true;
+
+    // Generar ID único para esta instancia
+    const scannerId = `scanner_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+
+    const connect = () => {
+      if (!active) return;
+      
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window.location.host}/ws/scanner?id=${scannerId}&type=scanner`;
+      
+      ws = new WebSocket(wsUrl);
+
+      ws.onopen = () => {
+        console.log('Escáner conectado al servidor');
+        pingInterval = setInterval(() => {
+          if (ws.readyState === WebSocket.OPEN) ws.send('ping');
+        }, 30000);
+      };
+
+      ws.onclose = () => {
+        if (pingInterval) clearInterval(pingInterval);
+        if (active) reconnectTimeout = setTimeout(connect, 3000);
+      };
+
+      ws.onerror = () => ws.close();
+    };
+
+    connect();
+
+    return () => {
+      active = false;
+      if (ws) ws.close();
+      if (reconnectTimeout) clearTimeout(reconnectTimeout);
+      if (pingInterval) clearInterval(pingInterval);
+    };
+  }, []);
+
   useEffect(() => {
     const scanner = new Html5Qrcode("reader");
     scannerRef.current = scanner;

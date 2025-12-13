@@ -1,8 +1,23 @@
+# Python
 venv/
 __pycache__/
 *.pyc
+
+# Node
+node_modules/
+
+# Build outputs
+frontend/dist/
+
+# IDE
 .idea/
 .vscode/
-node_modules/
-frontend/dist/
+
+# Environment
 frontend/.env
+
+# SSL certificates (generated locally)
+backend/ssl/
+
+# Developer assets (not needed for users)
+iconos-lector/
