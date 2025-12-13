@@ -27,9 +27,9 @@ if getattr(sys, 'frozen', False):
     # Corriendo desde .exe empaquetado
     bundle_dir = sys._MEIPASS
     current_dir = bundle_dir
-    # En .exe, el SSL se genera en la carpeta del ejecutable
-    exe_dir = os.path.dirname(sys.executable)
-    SSL_DIR = os.path.join(exe_dir, "ssl")
+    # SSL en AppData (oculto al usuario)
+    appdata = os.environ.get('APPDATA', os.path.expanduser('~'))
+    SSL_DIR = os.path.join(appdata, "ScannerPipos", "ssl")
     icon_path = os.path.join(bundle_dir, "frontend", "dist", "icon-192.png")
 else:
     # Corriendo desde código fuente
